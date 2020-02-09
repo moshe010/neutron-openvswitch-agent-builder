@@ -5,10 +5,9 @@ dist: bionic
 arch: arm64
 env:
   global:
-    - ARCH=${TRAVIS_ARCH}
     - TAG=${TAG:-latest}
     - BRANCH=master
-    - DOCKER_NAME=centos-binary-neutron-openvswitch-agent-${BRANCH}-${ARCH}
+    - DOCKER_NAME=centos-binary-neutron-openvswitch-agent-${BRANCH}-aarch64
     - DOCKER_VERSION=latest
 
 services:
@@ -41,7 +40,7 @@ script:
   - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/kolla; pip install -r requirements.txt; python2 ./setup.py install' || travis_terminate 1
 
 # Create Docker
-  - sudo docker exec -i ovs_agent_docker kolla-build --base centos --base-arch ${ARCH} neutron-openvswitch-agent || travis_terminate 1
+  - sudo docker exec -i ovs_agent_docker kolla-build --base centos --base-arch aarch64 neutron-openvswitch-agent || travis_terminate 1
 
 # Upload docker
   - docker_uuid=$(docker images|grep binary-neutron-openvswitch-agent|awk '{print $3}')
