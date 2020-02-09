@@ -1,0 +1,64 @@
+language: python
+python: 2.7
+sudo: required
+dist: bionic
+arch: arm64
+env:
+  global:
+    - TAG=${TAG:-latest}
+    - BRANCH=master
+    - DOCKER_NAME=centos-binary-neutron-openvswitch-agent-${BRANCH}-aarch64
+    - DOCKER_VERSION=latest
+
+services:
+  - docker
+
+before_deploy:
+  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
+
+script:
+  - sudo docker pull arm64v8/centos:7
+  - sudo docker run -di --name ovs_agent_docker -v $(pwd):/neutron-openvswitch-agent-builder -v /var/run/docker.sock:/var/run/docker.sock arm64v8/centos:7 /usr/sbin/init
+  - sudo docker exec -i ovs_agent_docker uname -a
+  - sudo docker exec -i ovs_agent_docker cat /etc/redhat-release
+
+# Install prereqs
+  - sudo docker exec -i ovs_agent_docker bash -cx 'curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py; python2 ./get-pip.py'
+  - sudo docker exec -i ovs_agent_docker bash -cx 'pip install setuptools tox pbr jinja2 requests'
+  - sudo docker exec -i ovs_agent_docker bash -cx "yum install -y git"
+
+# Install TripleO
+  - git clone https://github.com/openstack/tripleo-repos $(pwd)/tripleo-repos
+  - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/tripleo-repos; python2 ./setup.py install' || travis_terminate 1
+  - sudo docker exec -i ovs_agent_docker tripleo-repos -d centos7 -b $BRANCH current
+
+# Install Kolla
+  - git clone -b $BRANCH --single-branch https://github.com/openstack/kolla $(pwd)/kolla
+
+
+# Install kolla
+  - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/kolla; pip install -r requirements.txt; python2 ./setup.py install' || travis_terminate 1
+
+# Create Docker
+  - sudo docker exec -i ovs_agent_docker kolla-build --base centos --base-arch aarch64 neutron-openvswitch-agent || travis_terminate 1
+
+# Upload docker
+  - docker_uuid=$(docker images|grep binary-neutron-openvswitch-agent|awk '{print $3}')
+
+# Validate neutron version
+  - docker run --rm $docker_uuid rpm -qa|sort|egrep 'neutron|os-vif'
+
+# Tag docker
+  - docker tag $docker_uuid mellanox/${DOCKER_NAME}:${DOCKER_VERSION}
+  - docker images
+
+deploy:
+  # Push image to Dockerhub on merge to master
+  - provider: script
+    skip_cleanup: true
+    script: >
+      bash -cx '
+      docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION};
+      echo done'
+    on:
+      branch: master
