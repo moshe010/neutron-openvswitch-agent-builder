@@ -17,6 +17,7 @@ before_deploy:
   - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
 
 script:
+  - env
   - sudo docker pull arm64v8/centos:7
   - sudo docker run -di --name ovs_agent_docker -v $(pwd):/neutron-openvswitch-agent-builder -v /var/run/docker.sock:/var/run/docker.sock arm64v8/centos:7 /usr/sbin/init
   - sudo docker exec -i ovs_agent_docker uname -a
@@ -25,6 +26,7 @@ script:
 # Install prereqs
   - sudo docker exec -i ovs_agent_docker bash -cx 'curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py; python2 ./get-pip.py'
   - sudo docker exec -i ovs_agent_docker bash -cx 'pip install setuptools tox pbr jinja2 requests'
+  - sudo docker exec -i ovs_agent_docker bash -cx 'yum update -y'
   - sudo docker exec -i ovs_agent_docker bash -cx "yum install -y git"
 
 # Install TripleO
@@ -53,7 +55,7 @@ script:
   - docker images
 
 deploy:
-  # Push image to Dockerhub on merge to master
+  # Push image to Dockerhub on merge to $BRANCH
   - provider: script
     skip_cleanup: true
     script: >
@@ -61,4 +63,4 @@ deploy:
       docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION};
       echo done'
     on:
-      branch: master
+      branch: $BRANCH
