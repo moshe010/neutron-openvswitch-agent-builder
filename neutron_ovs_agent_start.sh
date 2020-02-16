@@ -1,7 +1,7 @@
 #!/bin/bash
 LOG_DIR_HOST=/var/log/neutron
 CONF_DIR_HOST=/etc/neutron
-BRANCH=master
+BRANCH=stein
 IMAGE_NAME=mellanox/centos-binary-neutron-openvswitch-agent-${BRANCH}-aarch64
 CONTAINER_NAME=neutron_ovs_agent
 
@@ -20,7 +20,6 @@ docker container create \
 -v /run/openvswitch:/run/openvswitch/ \
 -v ${LOG_DIR_HOST}:/var/log/neutron \
 -v ${CONF_DIR_HOST}:/etc/neutron \
-
 -v ${PWD}/neutron_ovs_agent_launcher.sh:/neutron_ovs_agent_launcher.sh \
 ${IMAGE_NAME} \
 bash /neutron_ovs_agent_launcher.sh
