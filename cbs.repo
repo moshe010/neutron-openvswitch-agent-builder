@@ -1,0 +1,11 @@
+[cbs]
+name=CBS
+baseurl=https://cbs.centos.org/repos/cloud7-openstack-train-release/aarch64/os/
+enabled=1
+gpgcheck=0
+
+[buildlogs.centos.org_centos_7_cloud_aarch64_openstack-train]
+name=added from: https://buildlogs.centos.org/centos/7/cloud/aarch64/openstack-train
+baseurl=https://buildlogs.centos.org/centos/7/cloud/aarch64/openstack-train
+enabled=1
+gpgcheck=0

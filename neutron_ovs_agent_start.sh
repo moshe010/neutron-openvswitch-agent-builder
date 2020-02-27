@@ -1,7 +1,7 @@
 #!/bin/bash
 LOG_DIR_HOST=/var/log/neutron
 CONF_DIR_HOST=/etc/neutron
-BRANCH=stein
+BRANCH=train
 IMAGE_NAME=mellanox/centos-binary-neutron-openvswitch-agent-${BRANCH}-aarch64
 CONTAINER_NAME=neutron_ovs_agent
 
