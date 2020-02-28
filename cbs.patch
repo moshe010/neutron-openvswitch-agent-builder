@@ -1,0 +1,28 @@
+diff --git a/docker/base/Dockerfile.j2 b/docker/base/Dockerfile.j2
+index 357f1da..df2ed43 100644
+--- a/docker/base/Dockerfile.j2
++++ b/docker/base/Dockerfile.j2
+@@ -117,6 +117,7 @@ RUN {{ macros.install_packages(base_centos_language_packages | customizable("cen
+     {% set base_yum_repo_files = [
+         'grafana.repo',
+         'rabbitmq_rabbitmq-server.repo',
++        'cbs.repo',
+     ] %}
+     # FIXME(mgoddard): Not available for CentOS 8 yet.
+     {% if distro_package_manager == 'yum' %}
+@@ -215,7 +216,6 @@ RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+ # FIXME(mgoddard): Not available for CentOS 8 yet.
+ {% if distro_package_manager == 'yum' %}
+     {% set base_centos_yum_repo_keys = base_centos_yum_repo_keys + [
+-        '/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Cloud',
+         '/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-OpsTools',
+         '/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Storage',
+         '/etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-Virtualization',
+@@ -228,7 +228,6 @@ RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+ # FIXME(mgoddard): Not available for CentOS 8 yet.
+ {% if distro_package_manager == 'yum' %}
+     {% set base_centos_yum_repo_packages = base_centos_yum_repo_packages + [
+-        'centos-release-openstack-train',
+         'centos-release-ceph-nautilus',
+         'centos-release-opstools',
+         'centos-release-qemu-ev',
