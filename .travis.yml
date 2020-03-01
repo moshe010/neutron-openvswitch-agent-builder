@@ -26,7 +26,7 @@ script:
   - sudo docker exec -i ovs_agent_docker bash -cx 'cp /neutron-openvswitch-agent-builder/cbs.repo /etc/yum.repos.d/'
   - sudo docker exec -i ovs_agent_docker bash -cx 'curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py; python ./get-pip.py'
   - sudo docker exec -i ovs_agent_docker bash -cx 'pip install setuptools tox pbr jinja2 requests gitpython'
-  - sudo docker exec -i ovs_agent_docker bash -cx "yum install -y git gcc python-devel"
+  - sudo docker exec -i ovs_agent_docker bash -cx "yum install -y git gcc"
 
 # Install TripleO
   - git clone https://github.com/openstack/tripleo-repos ${TRAVIS_BUILD_DIR}/tripleo_repos
