@@ -8,7 +8,7 @@ index c62dce2..f09e75a 100644
              'openstack-neutron-openvswitch',
 -            'openvswitch'
 +            'openvswitch',
-+            'os-vif'
++            'python-os-vif'
          ] %}
  
      {% elif base_package_type == 'deb' %}
@@ -17,7 +17,7 @@ index c62dce2..f09e75a 100644
              'neutron-openvswitch-agent',
 -            'openvswitch-switch'
 +            'openvswitch-switch',
-+            'os-vif'
++            'python-os-vif'
          ] %}
  
      {% endif %}
