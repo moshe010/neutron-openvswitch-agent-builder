@@ -7,7 +7,7 @@ env:
   global:
     - BRANCH=stein
     - DOCKER_NAME=centos-binary-neutron-openvswitch-agent-${BRANCH}-aarch64
-    - DOCKER_VERSION=8.0.3
+    - DOCKER_VERSION=latest
 
 services:
   - docker
@@ -61,8 +61,6 @@ deploy:
   - provider: script
     skip_cleanup: true
     script: >
-      bash -cx '
-      docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION};
-      echo done'
+      bash -cx docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION}
     on:
       branch: $BRANCH
