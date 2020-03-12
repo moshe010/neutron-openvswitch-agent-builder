@@ -37,7 +37,7 @@ script:
   - git clone -b stable/$BRANCH --single-branch https://github.com/openstack/kolla $TRAVIS_BUILD_DIR/kolla
 
 # Patch Kolla
-  - cd $TRAVIS_BUILD_DIR/kolla && cp $TRAVIS_BUILD_DIR/kolla.patch . && patch -p0 < kolla.patch || travis_terminate 1
+  - cd $TRAVIS_BUILD_DIR/kolla && cp $TRAVIS_BUILD_DIR/kolla.patch . && patch -p1 < kolla.patch || travis_terminate 1
   - cp $TRAVIS_BUILD_DIR/*.patch $TRAVIS_BUILD_DIR/kolla/docker/neutron/neutron-openvswitch-agent/
 
 # Install kolla
