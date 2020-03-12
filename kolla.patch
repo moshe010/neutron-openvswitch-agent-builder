@@ -1,0 +1,39 @@
+diff --git a/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2 b/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
+index c62dce2..f09e75a 100644
+--- a/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
++++ b/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
+@@ -10,14 +10,16 @@ LABEL maintainer="{{ maintainer }}" name="{{ image_name }}" build-date="{{ build
+ 
+         {% set neutron_openvswitch_agent_packages = [
+             'openstack-neutron-openvswitch',
+-            'openvswitch'
++            'openvswitch',
++            'os-vif'
+         ] %}
+ 
+     {% elif base_package_type == 'deb' %}
+ 
+         {% set neutron_openvswitch_agent_packages = [
+             'neutron-openvswitch-agent',
+-            'openvswitch-switch'
++            'openvswitch-switch',
++            'os-vif'
+         ] %}
+ 
+     {% endif %}
+@@ -25,7 +27,14 @@ LABEL maintainer="{{ maintainer }}" name="{{ image_name }}" build-date="{{ build
+ 
+ {{ macros.install_packages(neutron_openvswitch_agent_packages | customizable("packages")) }}
+ 
+-{% block neutron_openvswitch_agent_footer %}{% endblock %}
++{% block neutron_openvswitch_agent_footer %}
++RUN (yum update -y)
++RUN (yum install patch -y)
++COPY 586252.patch /lib/python2.7/site-packages
++COPY 698336.patch /lib/python2.7/site-packages
++RUN (cd /lib/python2.7/site-packages; patch --verbose -p1 < 586252.patch)
++RUN (cd /lib/python2.7/site-packages; patch --verbose -p0 < 698336.patch)
++{% endblock %}
+ {% block footer %}{% endblock %}
+ 
+ USER neutron

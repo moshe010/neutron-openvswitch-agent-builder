@@ -5,10 +5,9 @@ dist: bionic
 arch: arm64
 env:
   global:
-    - TAG=${TAG:-latest}
     - BRANCH=stein
     - DOCKER_NAME=centos-binary-neutron-openvswitch-agent-${BRANCH}-aarch64
-    - DOCKER_VERSION=latest
+    - DOCKER_VERSION=8.0.3
 
 services:
   - docker
@@ -19,7 +18,7 @@ before_deploy:
 script:
   - env
   - sudo docker pull arm64v8/centos:7
-  - sudo docker run -di --name ovs_agent_docker -v $(pwd):/neutron-openvswitch-agent-builder -v /var/run/docker.sock:/var/run/docker.sock arm64v8/centos:7 /usr/sbin/init
+  - sudo docker run -di --name ovs_agent_docker -v $TRAVIS_BUILD_DIR:/neutron-openvswitch-agent-builder -v /var/run/docker.sock:/var/run/docker.sock arm64v8/centos:7 /usr/sbin/init
   - sudo docker exec -i ovs_agent_docker uname -a
   - sudo docker exec -i ovs_agent_docker cat /etc/redhat-release
 
@@ -30,31 +29,16 @@ script:
   - sudo docker exec -i ovs_agent_docker bash -cx "yum install -y git"
 
 # Install TripleO
-  - git clone https://github.com/openstack/tripleo-repos $(pwd)/tripleo-repos
+  - git clone https://github.com/openstack/tripleo-repos $TRAVIS_BUILD_DIR/tripleo-repos
   - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/tripleo-repos; python2 ./setup.py install' || travis_terminate 1
   - sudo docker exec -i ovs_agent_docker tripleo-repos -d centos7 -b $BRANCH current
 
 # Download Kolla
-  - git clone -b stable/$BRANCH --single-branch https://github.com/openstack/kolla $(pwd)/kolla
+  - git clone -b stable/$BRANCH --single-branch https://github.com/openstack/kolla $TRAVIS_BUILD_DIR/kolla
 
 # Patch Kolla
-  - cp $TRAVIS_BUILD_DIR/*.patch $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/
-  # this code will be replaced
-  - sed -i 's/{% block neutron_openvswitch_agent_footer %}{% endblock %}//g' $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-  - sed -i 's/USER neutron//g' $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-  - echo "{% block neutron_openvswitch_agent_footer %}" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-
-  # add custom patch
-  - echo "RUN (yum update -y)" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-  - echo "RUN (yum install patch -y)" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-  - echo "COPY 586252.patch /lib/python2.7/site-packages" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-  - echo "COPY 698336.patch /lib/python2.7/site-packages" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-  - echo "RUN (cd /lib/python2.7/site-packages; patch --verbose -p1 < 586252.patch)" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-  - echo "RUN (cd /lib/python2.7/site-packages; patch --verbose -p0 < 698336.patch)" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-
-  # return user neutron
-  - echo "{% endblock %}" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
-  - echo "USER neutron" >> $(pwd)/kolla/docker/neutron/neutron-openvswitch-agent/Dockerfile.j2
+  - cd $TRAVIS_BUILD_DIR/kolla && cp $TRAVIS_BUILD_DIR/kolla.patch . && patch -p0 < kolla.patch || travis_terminate 1
+  - cp $TRAVIS_BUILD_DIR/*.patch $TRAVIS_BUILD_DIR/kolla/docker/neutron/neutron-openvswitch-agent/
 
 # Install kolla
   - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/kolla; pip install -r requirements.txt; python2 ./setup.py install' || travis_terminate 1
