@@ -61,6 +61,6 @@ deploy:
   - provider: script
     skip_cleanup: true
     script: >
-      bash -cx docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION}
+      bash -cx 'docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION}'
     on:
       branch: $BRANCH
