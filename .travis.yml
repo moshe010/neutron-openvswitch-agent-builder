@@ -60,7 +60,6 @@ deploy:
   # Push image to Dockerhub on merge to $BRANCH
   - provider: script
     skip_cleanup: true
-    script: >
-      bash -cx 'docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION}'
+    script: docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION}
     on:
       branch: $BRANCH
