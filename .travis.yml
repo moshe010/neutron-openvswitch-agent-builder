@@ -6,49 +6,41 @@ arch: arm64
 env:
   global:
     - BRANCH=train
-    - DOCKER_NAME=centos-neutron-openvswitch-agent-${BRANCH}-aarch64
+    - DOCKER_NAME=centos-binary-neutron-openvswitch-agent-${BRANCH}-aarch64
     - DOCKER_VERSION=latest
 
 services:
   - docker
 
-before_deploy:
-  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
+#before_deploy:
+#  - docker login -u "$REGISTRY_USER" -p "$REGISTRY_PASS"
 
 script:
   - env
-  - sudo docker pull arm64v8/centos:7
-  - sudo docker run -di --name ovs_agent_docker -v ${TRAVIS_BUILD_DIR}:/neutron-openvswitch-agent-builder -v /var/run/docker.sock:/var/run/docker.sock arm64v8/centos:7 /usr/sbin/init
+  - sudo docker run -di --name ovs_agent_docker -v $TRAVIS_BUILD_DIR:/neutron-openvswitch-agent-builder -v /var/run/docker.sock:/var/run/docker.sock arm64v8/centos:7 /usr/sbin/init
   - sudo docker exec -i ovs_agent_docker uname -a
   - sudo docker exec -i ovs_agent_docker cat /etc/redhat-release
 
 # Install prereqs
-  - sudo docker exec -i ovs_agent_docker bash -cx 'cp /neutron-openvswitch-agent-builder/cbs.repo /etc/yum.repos.d/'
-  - sudo docker exec -i ovs_agent_docker bash -cx 'curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py; python ./get-pip.py'
-  - sudo docker exec -i ovs_agent_docker bash -cx 'pip install setuptools tox pbr jinja2 requests gitpython'
-  - sudo docker exec -i ovs_agent_docker bash -cx "yum install -y git gcc"
+  - sudo docker exec -i ovs_agent_docker yum install -y git python3
 
 # Install TripleO
-  - git clone https://github.com/openstack/tripleo-repos ${TRAVIS_BUILD_DIR}/tripleo_repos
-  - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/tripleo_repos; python ./setup.py install' || travis_terminate 1
-  - sudo docker exec -i ovs_agent_docker tripleo-repos -d centos7 -b $BRANCH current 2>&1|tee
+  - git clone https://github.com/openstack/tripleo-repos $TRAVIS_BUILD_DIR/tripleo-repos
+  - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/tripleo-repos; python3 ./setup.py install; pip3 install -r requirements.txt' || travis_terminate 1
+  - sudo docker exec -i ovs_agent_docker /usr/local/bin/tripleo-repos -d centos7 -b $BRANCH current
 
-# Download Kolla
-  - git clone -b stable/$BRANCH --single-branch https://github.com/openstack/kolla ${TRAVIS_BUILD_DIR}/kolla
+# Install Kolla
+  - sudo docker exec -i ovs_agent_docker yum install -y openstack-kolla
 
-# Install kolla
-  - sudo docker exec -i ovs_agent_docker bash -cx 'cp /neutron-openvswitch-agent-builder/cbs.repo /neutron-openvswitch-agent-builder/kolla/docker/base/cbs.repo'
-  - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/kolla; pip install -r requirements.txt 2>&1|tee'
-  - cd ${TRAVIS_BUILD_DIR}/kolla && patch -p1 < ${TRAVIS_BUILD_DIR}/cbs.patch || travis_terminate 1
-  - sudo docker exec -i ovs_agent_docker bash -cx 'cd /neutron-openvswitch-agent-builder/kolla; python ./setup.py install' || travis_terminate 1
+# Patch Kolla
+#  - cd $TRAVIS_BUILD_DIR/kolla && cp $TRAVIS_BUILD_DIR/kolla.patch . && patch -p1 < kolla.patch || travis_terminate 1
+#  - cp $TRAVIS_BUILD_DIR/*.patch $TRAVIS_BUILD_DIR/kolla/docker/neutron/neutron-openvswitch-agent/
 
 # Create Docker
   - sudo docker exec -i ovs_agent_docker kolla-build --base centos --base-arch aarch64 neutron-openvswitch-agent || travis_terminate 1
 
 # Upload docker
-  - docker images
-  - docker images|grep neutron-openvswitch-agent
-  - docker_uuid=$(docker images|grep neutron-openvswitch-agent|awk '{print $3}')
+  - docker_uuid=$(docker images|grep binary-neutron-openvswitch-agent|awk '{print $3}')
 
 # Validate neutron version
   - docker run --rm $docker_uuid rpm -qa|sort|egrep 'neutron|os-vif'
@@ -61,8 +53,6 @@ deploy:
   # Push image to Dockerhub on merge to $BRANCH
   - provider: script
     skip_cleanup: true
-    script: >
-      bash -cx docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION}
+    script: docker push mellanox/${DOCKER_NAME}:${DOCKER_VERSION}
     on:
       branch: $BRANCH
-      condition: $TRAVIS_REPO_SLUG = Mellanox/neutron-openvswitch-agent-builder
